@@ -1,0 +1,43 @@
+#version 430 core 
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, binding = 6) buffer HashBuffer 
+{
+    int cell_hashes[];
+};
+
+layout(std430, binding = 7) buffer IndexBuffer 
+{
+    int indices[];
+};
+
+uniform int k;
+uniform int j;
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+
+    uint partner_gid = gid ^ j;
+
+    if (partner_gid > gid)
+    {
+        bool ascending = ((gid & k) == 0);
+
+        int hash_a = cell_hashes[gid];
+        int hash_b = cell_hashes[partner_gid];
+
+        if (ascending == (hash_a > hash_b))
+        {
+            cell_hashes[gid] = hash_b;
+            cell_hashes[partner_gid] = hash_a;
+
+            int index_a = indices[gid];
+            int index_b = indices[partner_gid];
+
+            indices[gid] = index_b;
+            indices[partner_gid] = index_a;
+        }
+    }
+}

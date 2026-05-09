@@ -1,0 +1,48 @@
+#version 430 core
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, binding = 6) readonly buffer HashBuffer 
+{
+    int cell_hashes[];
+};
+
+layout(std430, binding = 8) writeonly buffer CellStartBuffer {
+    int cell_start[];
+};
+
+layout(std430, binding = 9) writeonly buffer CellEndBuffer {
+    int cell_end[];
+};
+
+
+uniform int num_particles;
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+
+    if (gid >= num_particles) return;
+
+    int current_hash = cell_hashes[gid];
+
+    if (gid == 0)
+    {
+        cell_start[current_hash] = 0;
+    }
+    else
+    {
+        int prev_hash = cell_hashes[gid - 1];
+
+        if (current_hash != prev_hash)
+        {
+            cell_start[current_hash] = int(gid);
+            cell_end[prev_hash] = int(gid); 
+        }
+    }
+
+    if (gid == num_particles - 1)
+    {
+        cell_end[current_hash] = num_particles;
+    }
+}

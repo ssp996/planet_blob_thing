@@ -1,0 +1,34 @@
+#version 430 core
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, binding = 0) buffer PositionBuffer 
+{
+    vec2 positions[];
+};
+
+layout(std430, binding = 1) buffer VelocityBuffer 
+{
+    vec2 velocities[];
+};
+
+layout(std430, binding = 2) buffer AccelerationBuffer 
+{
+    vec2 accelerations[];
+};
+
+uniform float dt;
+uniform int num_particles;
+
+void main()
+{
+    uint i = gl_GlobalInvocationID.x;
+
+    if (i >= num_particles) return;
+
+    vec2 v_step = velocities[i] + accelerations[i] * 0.5 * dt;
+    vec2 p_step = positions[i] + v_step * dt;
+
+    positions[i] = p_step;
+    velocities[i] = v_step;
+}
